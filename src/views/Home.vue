@@ -1,18 +1,178 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js App" />
+    <b-loading
+      :is-full-page="true"
+      :active.sync="loading"
+      :can-cancel="false"
+    ></b-loading>
+    <section class="section" v-if="!loading">
+      <div class="container">
+        <h1 class="title has-text-centered">Weather</h1>
+        <h2 class="subtitle has-text-centered">Rio de Janeiro</h2>
+        <div class="columns weather-info">
+          <div class="column is-2">
+            <b-icon :icon="weatherIcon" />
+          </div>
+          <div class="column is-2">
+            <span class="has-text-left main">
+              {{ currentWeather.weather[0].description }}
+            </span>
+            <span class="has-text-left temp">
+              {{ currentWeather.main.temp }} °C
+            </span>
+          </div>
+        </div>
+        <div class="feeling">
+          <span>Feels like: </span>
+          <span :class="feelingClass"
+            >{{ currentWeather.main.feels_like }} °C</span
+          >
+        </div>
+        <div class="min-max">
+          <div class="min">
+            <span class="label">Min: </span>
+            <span class="value">{{ currentWeather.main.temp_min }} °C</span>
+          </div>
+          <div class="max">
+            <span class="label">Max: </span>
+            <span class="value">{{ currentWeather.main.temp_max }} °C</span>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
-<script>
-// @ is an alias to /src
-import HelloWorld from "@/components/HelloWorld.vue";
+<script lang="ts">
+import Vue from "vue";
 
-export default {
-  name: "Home",
-  components: {
-    HelloWorld
+import { Weather, WeatherMain, WeatherIcons } from "@/types/weather";
+import axios from "axios";
+
+export default Vue.extend({
+  data() {
+    return {
+      currentWeather: {} as Weather,
+      loading: true
+    };
+  },
+  computed: {
+    weatherIcon(): string | undefined {
+      if (this.loading) return undefined;
+
+      const weatherMain = this.currentWeather.weather[0].main.toLowerCase() as WeatherMain;
+      return WeatherIcons[weatherMain];
+    },
+    feelingClass(): string {
+      const feelingCompare =
+        this.currentWeather.main.feels_like - this.currentWeather.main.temp;
+      if (feelingCompare > 0) return "has-text-danger";
+      else if (feelingCompare === 0) return "";
+      return "has-text-info";
+    }
+  },
+  mounted() {
+    const weatherUrl = `${process.env.VUE_APP_WEATHER_URL}/weather?q=Rio%20De%20Janeiro&APPID=${process.env.VUE_APP_WEATHER_KEY}&units=metric`;
+    axios
+      .get(weatherUrl)
+      .then(res => {
+        if (res.status === 200) {
+          this.currentWeather = res.data;
+          console.log(this.currentWeather);
+        }
+      })
+      .finally(() => {
+        this.loading = false;
+      });
   }
-};
+});
 </script>
+
+<style lang="scss" scoped>
+@import "@/assets/styles/theme.scss";
+
+.weather-info {
+  margin: 5rem auto;
+  justify-content: center;
+
+  > :nth-child(1) {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    .icon {
+      $size: 7rem;
+      width: $size;
+      height: $size;
+
+      /deep/ svg {
+        width: $size !important;
+        height: $size !important;
+        color: $info;
+      }
+    }
+  }
+
+  > :nth-child(2) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+
+    .main {
+      font-size: 1.25rem;
+      text-transform: capitalize;
+      color: $grey;
+    }
+
+    .temp {
+      font-size: 2rem;
+      font-weight: 500;
+    }
+  }
+}
+
+.feeling {
+  margin: 1rem auto;
+  text-align: center;
+
+  > span:nth-child(1) {
+    font-size: 1.5rem;
+  }
+
+  > span:nth-child(2) {
+    font-size: 1.75rem;
+    font-weight: 500;
+  }
+}
+
+.min-max {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .label {
+    font-size: 1.5rem;
+    font-weight: normal;
+    margin: 0;
+    display: inline;
+  }
+
+  .value {
+    font-size: 1.75rem;
+    font-weight: 500;
+  }
+
+  .min .value {
+    color: $info;
+  }
+
+  .max .value {
+    color: $danger;
+  }
+
+  .min {
+    margin-right: 1rem;
+  }
+}
+</style>
