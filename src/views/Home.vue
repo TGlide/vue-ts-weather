@@ -11,7 +11,7 @@
         <h2 class="subtitle has-text-centered has-text-white">
           Rio de Janeiro
         </h2>
-        <div class="box weather-info">
+        <div class="box weather-info appear-from-below">
           <div class="columns">
             <div class="column is-half">
               <b-icon :icon="weatherIcon" />
